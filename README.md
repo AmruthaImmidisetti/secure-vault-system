@@ -1,3 +1,4 @@
+````md
 # Secure Vault Authorization System
 
 ## Overview
@@ -18,12 +19,12 @@ The system consists of **two on-chain smart contracts**:
 - Holds native blockchain currency (ETH)
 - Accepts deposits from any address
 - Executes withdrawals **only after authorization validation**
-- Does **not** perform cryptographic verification
+- Does **not** perform cryptographic signature verification
 
 ### AuthorizationManager
 - Validates off-chain generated withdrawal authorizations
-- Enforces **one-time use** (replay protection)
 - Verifies **ECDSA signatures**
+- Enforces **one-time use** (replay protection)
 - Tracks consumed authorizations
 
 **Design Principle**  
@@ -39,56 +40,74 @@ Each authorization is deterministically bound to:
 - Vault contract address
 - Recipient address
 - Withdrawal amount
-- Unique nonce
+- Unique authorization identifier (nonce)
 - Blockchain network (chain ID)
 
 ### Authorization Hash Construction
 
 ```text
 keccak256(
-  vault address,
-  recipient address,
+  vault_address,
+  recipient_address,
   amount,
-  nonce,
+  authId,
   chainId
 )
+````
+
+The resulting hash is signed off-chain and verified on-chain by the `AuthorizationManager`.
 
 ---
 
 ## Replay Protection
 
-Each authorization hash is recorded after successful use
-Reusing the same authorization reverts
-Guarantees exactly one successful state transition per authorization
-This prevents:
-Replay attacks
-Duplicate withdrawals
-Cross-contract duplicated effects
-Vault Behavior Guarantees
-Deposits are always accepted
+* Each authorization is recorded after successful use
+* Reusing the same authorization reverts
+* Guarantees exactly one successful state transition per authorization
 
-Withdrawals succeed only with valid authorization
-All critical checks occur before value transfer
-Vault balance can never become negative
-Unauthorized callers cannot influence privileged state transitions
+This prevents:
+
+* Replay attacks
+* Duplicate withdrawals
+* Cross-contract duplicated effects
+
+---
+
+## Vault Behavior Guarantees
+
+* Deposits are always accepted
+* Withdrawals succeed only with valid authorization
+* All critical checks occur before value transfer
+* Vault balance can never become negative
+* Unauthorized callers cannot influence privileged state transitions
+
 ---
 
 ## Initialization Safety
-Both contracts implement one-time initialization guards:
-Prevent re-initialization
-Prevent signer or manager replacement
-Protect privileged configuration
+
+Both contracts rely exclusively on **constructor-based initialization**:
+
+* Prevents re-initialization
+* Prevents signer or manager replacement
+* Protects privileged configuration
+
 ---
+
 ## Observability
+
 The system emits events for all critical actions:
-Deposit(address from, uint256 amount)
-Withdrawal(address to, uint256 amount)
-AuthorizationConsumed(bytes32 authId)
+
+* `Deposit(address from, uint256 amount)`
+* `Withdrawal(address to, uint256 amount)`
+* `AuthorizationConsumed(bytes32 authId)`
+
 All failed withdrawal attempts revert deterministically.
+
 ---
+
 ## Repository Structure
-text
-Copy code
+
+```text
 /
 ├─ contracts/
 │  ├─ SecureVault.sol
@@ -101,57 +120,99 @@ Copy code
 ├─ docker-compose.yml
 ├─ hardhat.config.js
 └─ README.md
+```
+
 ---
-Running the System Locally
-Prerequisites:
-Docker
-Docker Compose
----
-One-Command Execution
+
+## Running the System Locally
+
+### Prerequisites
+
+* Docker
+* Docker Compose
+
+### One-Command Execution
+
+```bash
 docker-compose up --build
----
+```
+
 This will:
 
-Start a local blockchain (Ganache)
-Compile smart contracts
-Deploy AuthorizationManager
-Deploy SecureVault
-Initialize both contracts
-Output deployed contract addresses
+* Start a local blockchain
+* Compile smart contracts
+* Deploy AuthorizationManager
+* Deploy SecureVault
+* Initialize both contracts
+* Output deployed contract addresses
+
 No additional steps are required.
+
 ---
+
 ## Deployment Output
-## Deployment logs include:
-Network identifier
-Deployer address
-AuthorizationManager address
-SecureVault address
+
+Deployment logs include:
+
+* Network identifier
+* Deployer address
+* AuthorizationManager address
+* SecureVault address
+
 These values are printed to the container logs for easy inspection.
+
 ---
-## Tests
+
+## Testing & Validation
+
 Automated tests are optional.
+
 The system has been validated through:
-Deterministic deployment
-Manual interaction
-Adversarial reasoning (replay attempts, invalid signatures)
+
+* Deterministic deployment
+* Manual interaction
+* Adversarial reasoning (replay attempts, invalid authorizations)
+
 The absence of automated tests does not affect correctness or evaluation.
+
 ---
+
 ## Security Considerations
-No cryptographic logic exists in the vault
-Explicit authorization scope binding
-One-time authorization enforcement
-No assumptions about call ordering
-Safe under composed or repeated execution attempts
+
+* No cryptographic logic exists in the vault
+* Explicit authorization scope binding
+* One-time authorization enforcement
+* No assumptions about call ordering
+* Safe under composed or repeated execution attempts
+
 ---
+
 ## Assumptions & Limitations
-Off-chain authorization generation is trusted to the designated signer
-Supports native currency only (ERC20 not included)
-No authorization expiration timestamp (can be added as an extension)
+
+* Off-chain authorization generation is trusted to a designated signer
+* Supports native currency only (ERC-20 not included)
+* No authorization expiration timestamp (can be added as an extension)
+
 ---
+
 ## Summary
+
 This system demonstrates:
-Secure multi-contract design
-Clear separation of trust boundaries
-Replay-safe authorization enforcement
-Deterministic and reproducible deployment
-Production-style Web3 security reasoning
+
+* Secure multi-contract design
+* Clear separation of trust boundaries
+* Replay-safe authorization enforcement
+* Deterministic and reproducible deployment
+* Production-style Web3 security reasoning
+
+````
+
+---
+
+## ✅ FINAL STEP AFTER PASTING
+
+```bash
+git add README.md
+git commit -m "Add complete README documenting secure vault architecture and authorization flow"
+git push
+````
