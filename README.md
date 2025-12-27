@@ -1,4 +1,4 @@
-````md
+
 # Secure Vault Authorization System
 
 ## Overview
